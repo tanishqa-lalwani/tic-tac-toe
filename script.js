@@ -1,7 +1,4 @@
 var  board;
-var o_mark='O';
-var x_mark ='X';
-
 const win = [
 	[0,1,2],
 	[3,4,5],
@@ -17,8 +14,9 @@ const boxes = document.querySelectorAll('.box');
 const winDisplay = document.getElementById('winner');
 const display = document.getElementById('winning-text');
 startGame();
-let circle;
-var count=0;
+const ai = 'O';
+const human = 'X';
+var current;
 function startGame() {
 	board= Array.from(Array(9).keys());
 	for( var i=0 ; i< boxes.length ; i++) {
@@ -30,33 +28,119 @@ function startGame() {
 
 let draw=false;
 function turnClick(cell) {
-	const playerid= cell.target.id;
-	const current = circle ? o_mark : x_mark;
-	board[playerid]=current;
-	count++;
-	document.getElementById(playerid).innerText=current;
-	swapTurns();
-	var winner = checkWin(current);
-	if(winner!=-1 || count >=9) {
+	if(board[cell.target.id] !== ai && board[cell.target.id] !== human) {
+		turn(cell.target.id,human);
+		let winner = checkWin();
+		//if(winner !== human && winner !== "tie")
+			//turn(bestMove(),ai);
+
+	}
+	/*if(winner!=-1 || count >=9) {
 		console.log("winner "+ current + " : "+ draw);
 		console.log(count);
 		end(current,winner);
-	}
+	}*/
 }
 
-function swapTurns() {
-	circle = !circle;
-	}
+let scores = {
+	X : 1,
+	O : -1,
+	draw : 0
+};
+function turn(cellId,player) {
+	board[cellId]=player;
+	document.getElementById(cellId).innerText = player	;
+	let winner = checkWin();
+	if(winner === player)
+		end(player,0);
 
-function checkWin(current) {
+}
 
-	for(var i=0; i< win.length ; i++) {
-		if(board[win[i][0]] == current && board[win[i][1]] == current  && board[win[i][2]] == current) {
-			return i;
+function bestMove() {
+	let bestScore = -1000;
+	let move ; 	
+	for( var i=0 ; i< board.length ; i++) {
+			if(board[i] !== 'X' && board[i] !== 'O')	
+				board[i]=ai;
+				let score = minimax(board,0,false);
+				console.log(score);
+			if(score > bestScore) {
+				bestScore = score;
+				move = i ;
 			}
 		}
-			return -1;
 	
+	board[move] = ai;
+	return move;
+}
+
+function minimax(board,depth,isMax) {
+	let check = checkWin();
+	if(check !== null) {
+		return scores[check];
+	}
+
+	if(isMax) {
+		let bestScore = -1000;
+		for( var i=0 ; i< board.length ; i++) {
+			if(board[i] !== human && board[i] !== ai) {//available
+				board[i]=ai;
+				let score = minimax(board,depth + 1,false);
+				bestScore = Math.max(score,bestScore);	
+			}
+		}
+		return bestScore;
+	} 
+	else {
+		let bestScore = 1000;
+		for( var i=0 ; i< board.length ; i++) {
+			if(board[i] !== 'X' && board[i] !== 'O') {//available
+				board[i]=human;
+				let score = minimax(board,depth + 1,true);
+				bestScore = Math.min(score,bestScore);	
+			}
+		}
+		return bestScore;
+	}
+
+}
+/*function swapTurns() {
+	current = ! current;
+	}*/
+
+function checkWin() {
+	let winner = null;
+	let count = 0;
+	let ai = 'O';
+	let human = 'X';
+	for(var i=0; i< win.length ; i++) {
+		if(board[win[i][0]] == ai && board[win[i][1]] == ai  && board[win[i][2]] == ai) {
+			winner = ai;
+			}
+	}
+
+	if(winner === null) {
+		for(var i=0; i< win.length ; i++) {
+			if(board[win[i][0]] == human && board[win[i][1]] == human  && board[win[i][2]] == human) {
+				winner = human;
+				}
+		}
+	}
+
+	// check tie
+	for(var i=0; i< board.length ; i++) {
+		if(board[i] === ai || board[i] === human) {
+			count++;
+			}
+	}
+
+	if(count === 9 && winner === null)
+		return "tie";
+	else
+		return winner;
+
+
+
 }
 
 function end(player,pos) {
